@@ -461,6 +461,13 @@ class Interaction(Base):
           self._capacity_var = item.parameterValues.get('resource', None)
         elif item.getName() == 'minimum':
           self._minimum_var = item.parameterValues.get('resource', None)
+      elif name == '_ramping_rates':
+        # Get ramp up and down
+        for sub in item.subparts:
+          if sub.getName() == "ramp_down":
+            self._ramp_down = sub.value
+          if sub.getName() == "ramp_up":
+            self._ramp_up = sub.value
     # finalize some values
     resources = set(list(self.get_inputs()) + list(self.get_outputs()))
     ## capacity: if "variable" is None and only one resource in interactions, then that must be it
