@@ -15,8 +15,11 @@ from HERON.src.ValuedParams import factory as vp_factory
 from HERON.src.ValuedParamHandler import ValuedParamHandler
 from HERON.src import _utils as hutils
 
-framework_path = hutils.get_raven_loc()
-sys.path.append(framework_path)
+try:
+  import ravenframework
+except ModuleNotFoundError:
+  framework_path = hutils.get_raven_loc()
+  sys.path.append(framework_path)
 from ravenframework.utils import InputData, xmlUtils,InputTypes
 
 # TODO can we use EntityFactory from RAVEN?
@@ -402,6 +405,19 @@ class Interaction(Base):
               as with the component's capacity.""")
     specs.addSub(minn)
 
+    descr = r"""allows the user to define maximum ramping up and down rates. 
+                - for storage components the rates are expressed as a quantity per model time step
+                - for components consuming or producing resources, the rates consist in a maximum rate change per time step
+              Both the maximum ramping up and down rates should be positive, i.e. expressed in absolute value
+              For instance if a storage component stores mass a ramping up constraint would be in kg/h and for a producing 
+              component the rate would be in kg/h^2"""
+    ramping_rates = vp_factory.make_input_specs('ramping_rates', descr=descr)
+    ramp_up = vp_factory.make_input_specs('ramp_up')
+    ramping_rates.addSub(ramp_up)
+    ramp_down = vp_factory.make_input_specs('ramp_down')
+    ramping_rates.addSub(ramp_down)
+    specs.addSub(ramping_rates)
+    
     return specs
 
   def __init__(self, **kwargs):
@@ -423,6 +439,8 @@ class Interaction(Base):
                                         #   for example, {(Producer, 'capacity'): 'method'}
     self._sqrt_rte = 1.0                # sqrt of the round-trip efficiency for this interaction
     self._tracking_vars = []            # list of trackable variables for dispatch activity
+    self._ramping_up = None             # maximum ramping up rate
+    self._ramping_down = None           # maximum ramping down rate
 
   def read_input(self, specs, mode, comp_name):
     """
@@ -434,7 +452,7 @@ class Interaction(Base):
     """
     self.raiseADebug(' ... loading interaction "{}"'.format(self.tag))
     self._dispatchable = specs.parameterValues['dispatch']
-    for item in specs.subparts:
+    for item in specs.subparts: #reading the subnodes
       name = '_' + item.getName()
       if name in ['_capacity', '_minimum']:
         # common reading for valued params
@@ -472,6 +490,9 @@ class Interaction(Base):
     self._signals.update(signal)
     self._crossrefs[name] = vp
     setattr(self, name, vp)
+
+  def get_ramping_up(self, meta, raw=False): 
+    pass
 
   def get_capacity(self, meta, raw=False):
     """
