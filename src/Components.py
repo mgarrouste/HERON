@@ -417,7 +417,7 @@ class Interaction(Base):
     ramp_down = vp_factory.make_input_specs('ramp_down')
     ramping_rates.addSub(ramp_down)
     specs.addSub(ramping_rates)
-    
+
     return specs
 
   def __init__(self, **kwargs):
@@ -439,8 +439,8 @@ class Interaction(Base):
                                         #   for example, {(Producer, 'capacity'): 'method'}
     self._sqrt_rte = 1.0                # sqrt of the round-trip efficiency for this interaction
     self._tracking_vars = []            # list of trackable variables for dispatch activity
-    self._ramping_up = None             # maximum ramping up rate
-    self._ramping_down = None           # maximum ramping down rate
+    self._ramp_up = None                # maximum ramping up rate
+    self._ramp_down = None              # maximum ramping down rate
 
   def read_input(self, specs, mode, comp_name):
     """
@@ -491,8 +491,25 @@ class Interaction(Base):
     self._crossrefs[name] = vp
     setattr(self, name, vp)
 
-  def get_ramping_up(self, meta, raw=False): 
-    pass
+  def get_ramp_up(self): 
+    """
+      Returns the maximum ramping up rate of this interaction.
+      Provide the square root of the round-trip efficiency for this component.
+      Note we use the square root due to splitting loss across the input and output.
+      @ In, None
+      @ Out, ramp_up, float, maximum ramping down rate
+    """
+    return self._ramp_up
+
+  def get_ramp_down(self):
+    """
+      Returns the maximum ramping down rate of this interaction.
+      Provide the square root of the round-trip efficiency for this component.
+      Note we use the square root due to splitting loss across the input and output.
+      @ In, None
+      @ Out, ramp_down, float, maximum ramping down rate
+    """
+    return self._ramp_down
 
   def get_capacity(self, meta, raw=False):
     """
